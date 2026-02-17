@@ -1,6 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
+
 This project is a React + Vite + TypeScript PDF viewer with feature-based organization.
 
 - `src/app/`: App shell and top-level layout (`App.tsx`)
@@ -15,6 +16,7 @@ This project is a React + Vite + TypeScript PDF viewer with feature-based organi
 Keep new logic inside the relevant `features/*` module and avoid mixing concerns in `app/`.
 
 ## Build, Test, and Development Commands
+
 Use bun in this repository.
 
 - `bun install`: install dependencies
@@ -24,10 +26,12 @@ Use bun in this repository.
 - `bun run preview`: preview production build locally
 
 Before finishing any task, always run:
+
 - `bun run lint`
 - `bun run format`
 
 ## Coding Style & Naming Conventions
+
 - Language: TypeScript (`.ts`/`.tsx`), 2-space indentation, semicolons enabled.
 - Components: `PascalCase` file and export names (e.g., `VerticalViewer.tsx`).
 - Hooks/utilities: `camelCase` (e.g., `useMediaQuery.ts`, `clamp.ts`).
@@ -35,13 +39,17 @@ Before finishing any task, always run:
 - Use Tailwind utility classes for styling; reuse existing UI primitives from `src/components/ui`.
 
 ## Testing Guidelines
+
 There is no test suite configured yet. For now:
+
 - Validate changes with `bun run build` and manual UI checks.
 - When adding tests, prefer Vitest + React Testing Library.
 - Suggested naming: `*.test.ts` / `*.test.tsx` colocated with target code.
 
 ## Commit & Pull Request Guidelines
+
 Follow Conventional Commits:
+
 - `feat(scope): summary`
 - `fix(scope): summary`
 - `refactor(scope): summary`
@@ -49,12 +57,14 @@ Follow Conventional Commits:
 - `chore(scope): summary`
 
 PRs should include:
+
 - concise change summary and motivation
 - linked issue (if any)
 - screenshots/GIFs for UI changes (desktop + mobile)
 - validation notes (`bun run build`, manual checks)
 
 ## Security & Configuration Tips
+
 - Do not commit secrets or environment-specific credentials.
 - Keep PDF worker setup centralized in `src/shared/pdfjs/setup.ts`.
 - Treat `public/book.json` and `public/pdf/*` as runtime content; validate schema changes with zod.

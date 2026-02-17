@@ -173,7 +173,12 @@ export function VerticalViewer() {
               className="absolute left-0 top-0 flex w-full justify-center"
               style={{ transform: `translateY(${virtualRow.start}px)` }}
             >
-              <PageCanvas pageNumber={pageNumber} scale={1} className="w-full" fixedWidth={readerWidth} />
+              <PageCanvas
+                pageNumber={pageNumber}
+                scale={1}
+                className="w-full"
+                fixedWidth={readerWidth}
+              />
             </div>
           );
         })}

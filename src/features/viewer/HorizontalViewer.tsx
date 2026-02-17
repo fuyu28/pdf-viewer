@@ -87,7 +87,13 @@ export function HorizontalViewer() {
 
   useEffect(() => {
     let active = true;
-    const targetPages = [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+    const targetPages = [
+      currentPage - 2,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
+    ];
 
     for (const page of targetPages) {
       if (page < 1 || page > numPages || pageRatios[page] !== undefined) {
