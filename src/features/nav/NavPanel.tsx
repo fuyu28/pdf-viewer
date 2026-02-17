@@ -40,11 +40,15 @@ export function NavPanel({
 
       <Separator />
 
-      <TocList toc={book?.tableOfContents ?? []} onSelect={onGoToPage} />
       <PageJump
         currentPage={currentPage}
         totalPages={Math.max(1, totalPages)}
         onJump={onGoToPage}
+      />
+      <TocList
+        className="min-h-0 flex-1 pb-16"
+        toc={book?.tableOfContents ?? []}
+        onSelect={onGoToPage}
       />
 
       {!book && compact ? (

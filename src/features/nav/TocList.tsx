@@ -5,13 +5,14 @@ import type { TocItem } from "../book/bookStore";
 type TocListProps = {
   toc: TocItem[];
   onSelect: (page: number) => void;
+  className?: string;
 };
 
-export function TocList({ toc, onSelect }: TocListProps) {
+export function TocList({ toc, onSelect, className }: TocListProps) {
   return (
-    <div className="space-y-2">
+    <div className={`flex min-h-0 flex-1 flex-col space-y-2 ${className ?? ""}`}>
       <h3 className="text-sm font-semibold">目次</h3>
-      <ScrollArea className="h-[280px] rounded-md border bg-background p-2">
+      <ScrollArea className="min-h-0 flex-1 rounded-md border bg-background p-2">
         <div className="space-y-1">
           {toc.map((item) => (
             <Button
