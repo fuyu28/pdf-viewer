@@ -41,6 +41,18 @@ export function VerticalViewer() {
       return;
     }
 
+    const atTop = container.scrollTop <= 2;
+    if (atTop) {
+      setCurrentPage(1);
+      return;
+    }
+
+    const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
+    if (atBottom) {
+      setCurrentPage(Math.max(1, numPages));
+      return;
+    }
+
     if (Date.now() < suppressObserverUntilRef.current) {
       return;
     }
@@ -59,7 +71,7 @@ export function VerticalViewer() {
     });
 
     setCurrentPage(closest.index + 1);
-  }, [rowVirtualizer, setCurrentPage]);
+  }, [numPages, rowVirtualizer, setCurrentPage]);
 
   useEffect(() => {
     const element = parentRef.current;
