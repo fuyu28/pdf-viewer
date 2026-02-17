@@ -12,16 +12,22 @@ export function VerticalViewer() {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const suppressObserverUntilRef = useRef(0);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
   const [pageRatios, setPageRatios] = useState<Record<number, number>>({});
 
   const { numPages, getPageSize } = usePdf();
   const currentPage = useViewerStore((state) => state.currentPage);
+  const zoomScale = useViewerStore((state) => state.zoomScale);
   const setCurrentPage = useViewerStore((state) => state.setCurrentPage);
   const setGoToPageImpl = useViewerStore((state) => state.setGoToPageImpl);
   const readerWidth = useMemo(() => {
-    const available = containerWidth > 0 ? containerWidth - 8 : 800;
-    return Math.max(280, Math.min(PAGE_MAX_WIDTH, available));
-  }, [containerWidth]);
+    const viewportWidth = containerWidth > 0 ? containerWidth - 8 : 800;
+    const viewportHeight = containerHeight > 0 ? containerHeight : 1000;
+    const currentRatio = pageRatios[currentPage] ?? DEFAULT_PAGE_RATIO;
+    const fitByHeight = Math.max(280, (viewportHeight - 12) / currentRatio);
+    const fitWidth = Math.min(PAGE_MAX_WIDTH, viewportWidth, fitByHeight);
+    return Math.max(220, fitWidth * zoomScale);
+  }, [containerHeight, containerWidth, currentPage, pageRatios, zoomScale]);
 
   const rowVirtualizer = useVirtualizer({
     count: Math.max(1, numPages),
@@ -85,6 +91,7 @@ export function VerticalViewer() {
         return;
       }
       setContainerWidth(entry.contentRect.width);
+      setContainerHeight(entry.contentRect.height);
     });
 
     observer.observe(element);

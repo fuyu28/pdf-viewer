@@ -10,10 +10,13 @@ type ViewerState = {
   mode: ViewerMode;
   currentPage: number;
   numPages: number;
+  zoomScale: number;
   goToPageImpl: GoToPageImpl | null;
   setNumPages: (numPages: number) => void;
   setMode: (mode: ViewerMode) => void;
   setCurrentPage: (page: number) => void;
+  setZoomScale: (scale: number) => void;
+  changeZoomBy: (delta: number) => void;
   goToPage: (page: number) => void;
   setGoToPageImpl: (impl: GoToPageImpl | null) => void;
 };
@@ -22,6 +25,7 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
   mode: "vertical",
   currentPage: 1,
   numPages: 1,
+  zoomScale: 1,
   goToPageImpl: null,
   setNumPages: (numPages) => {
     const safeNumPages = Math.max(1, numPages);
@@ -34,6 +38,14 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
   setCurrentPage: (page) => {
     const { numPages } = get();
     set({ currentPage: clamp(page, 1, Math.max(1, numPages)) });
+  },
+  setZoomScale: (scale) => {
+    set({ zoomScale: clamp(scale, 0.5, 3) });
+  },
+  changeZoomBy: (delta) => {
+    const { zoomScale } = get();
+    const next = Math.round((zoomScale + delta) * 100) / 100;
+    set({ zoomScale: clamp(next, 0.5, 3) });
   },
   goToPage: (page) => {
     const { numPages, goToPageImpl } = get();

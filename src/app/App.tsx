@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Menu, Rows3, UnfoldVertical } from "lucide-react";
+import { BookOpen, Menu, Minus, Plus, Rows3, UnfoldVertical } from "lucide-react";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -14,11 +14,15 @@ import { VerticalViewer } from "../features/viewer/VerticalViewer";
 import { useMediaQuery } from "../shared/hooks/useMediaQuery";
 
 const PDF_URL = "/pdf/3000000149.pdf";
+const ZOOM_OPTIONS = [50, 67, 80, 100, 125, 150, 175, 200, 250, 300];
 
 function ViewerArea() {
   const mode = useViewerStore((state) => state.mode);
   const currentPage = useViewerStore((state) => state.currentPage);
+  const zoomScale = useViewerStore((state) => state.zoomScale);
   const setMode = useViewerStore((state) => state.setMode);
+  const setZoomScale = useViewerStore((state) => state.setZoomScale);
+  const changeZoomBy = useViewerStore((state) => state.changeZoomBy);
   const goToPage = useViewerStore((state) => state.goToPage);
 
   const { numPages, isLoading, error } = usePdf();
@@ -33,7 +37,40 @@ function ViewerArea() {
     void fetchBook();
   }, [fetchBook]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName;
+      const isTypingElement =
+        target?.isContentEditable ||
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        tagName === "SELECT";
+      if (isTypingElement) {
+        return;
+      }
+
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        changeZoomBy(0.1);
+      } else if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        changeZoomBy(-0.1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [changeZoomBy]);
+
   const title = useMemo(() => book?.title ?? "PDF Viewer", [book?.title]);
+  const zoomPercent = Math.round(zoomScale * 100);
+  const zoomOptions = useMemo(() => {
+    if (ZOOM_OPTIONS.includes(zoomPercent)) {
+      return ZOOM_OPTIONS;
+    }
+    return [...ZOOM_OPTIONS, zoomPercent].sort((a, b) => a - b);
+  }, [zoomPercent]);
 
   return (
     <div className="flex h-screen bg-gradient-to-b from-slate-100 to-slate-200">
@@ -57,6 +94,36 @@ function ViewerArea() {
             <Badge variant="secondary" className="hidden sm:inline-flex">
               {currentPage} / {Math.max(1, numPages)}
             </Badge>
+            <div className="hidden items-center gap-1 md:flex">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => changeZoomBy(-0.1)}
+                aria-label="縮小"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <select
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                value={String(zoomPercent)}
+                onChange={(event) => setZoomScale(Number(event.target.value) / 100)}
+                aria-label="倍率選択"
+              >
+                {zoomOptions.map((percent) => (
+                  <option key={percent} value={percent}>
+                    {percent}%
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => changeZoomBy(0.1)}
+                aria-label="拡大"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
             <Button variant="outline" size="sm" onClick={() => setIsInfoOpen(true)}>
               <BookOpen className="mr-1 h-4 w-4" />
               Info
@@ -82,6 +149,11 @@ function ViewerArea() {
           <div className="pointer-events-none absolute left-3 top-3 sm:hidden">
             <Badge variant="secondary" className="pointer-events-auto">
               {currentPage} / {Math.max(1, numPages)}
+            </Badge>
+          </div>
+          <div className="pointer-events-none absolute right-3 top-3 md:hidden">
+            <Badge variant="secondary" className="pointer-events-auto">
+              {zoomPercent}%
             </Badge>
           </div>
 
