@@ -54,7 +54,7 @@ type BookStore = {
   book: BookMeta | null;
   isLoading: boolean;
   error: string | null;
-  fetchBook: () => Promise<void>;
+  fetchBook: (jsonPath: string) => Promise<void>;
 };
 
 function normalizeBook(raw: z.infer<typeof RawBookSchema>): BookMeta {
@@ -86,19 +86,19 @@ export const useBookStore = create<BookStore>((set) => ({
   book: null,
   isLoading: false,
   error: null,
-  fetchBook: async () => {
+  fetchBook: async (jsonPath) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch("/book.json", { cache: "no-store" });
+      const response = await fetch(jsonPath, { cache: "no-store" });
       if (!response.ok) {
-        throw new Error(`book.json の読み込みに失敗しました (${response.status})`);
+        throw new Error(`${jsonPath} の読み込みに失敗しました (${response.status})`);
       }
 
       const json = await response.json();
       const parsed = RawBookSchema.parse(json);
       set({ book: normalizeBook(parsed), isLoading: false });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "book.json の解析に失敗しました";
+      const message = error instanceof Error ? error.message : `${jsonPath} の解析に失敗しました`;
       set({ error: message, isLoading: false });
     }
   },

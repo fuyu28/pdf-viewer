@@ -17,11 +17,13 @@ export function TocList({ toc, onSelect }: TocListProps) {
             <Button
               key={item.id}
               variant="ghost"
-              className="h-auto w-full justify-between px-2 py-2 text-left"
+              className="h-auto w-full justify-start gap-2 px-2 py-2 text-left"
               onClick={() => onSelect(item.page)}
             >
-              <span className="truncate">{item.title}</span>
-              <span className="text-xs text-muted-foreground">p.{item.page}</span>
+              <span className="shrink-0 tabular-nums text-[11px] text-muted-foreground/80">
+                {item.page}p
+              </span>
+              <span className="min-w-0 flex-1 truncate">{item.title}</span>
             </Button>
           ))}
         </div>

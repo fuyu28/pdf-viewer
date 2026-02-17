@@ -14,6 +14,7 @@ import { VerticalViewer } from "../features/viewer/VerticalViewer";
 import { useMediaQuery } from "../shared/hooks/useMediaQuery";
 
 const PDF_URL = "/pdf/3000000149.pdf";
+const BOOK_JSON_URL = PDF_URL.replace(/\.pdf$/i, ".json");
 const ZOOM_OPTIONS = [50, 67, 80, 100, 125, 150, 175, 200, 250, 300];
 
 function ViewerArea() {
@@ -34,7 +35,7 @@ function ViewerArea() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   useEffect(() => {
-    void fetchBook();
+    void fetchBook(BOOK_JSON_URL);
   }, [fetchBook]);
 
   useEffect(() => {
@@ -56,12 +57,18 @@ function ViewerArea() {
       } else if (event.key === "-" || event.key === "_") {
         event.preventDefault();
         changeZoomBy(-0.1);
+      } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        event.preventDefault();
+        goToPage(currentPage + 1);
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        event.preventDefault();
+        goToPage(currentPage - 1);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [changeZoomBy]);
+  }, [changeZoomBy, currentPage, goToPage]);
 
   const title = useMemo(() => book?.title ?? "PDF Viewer", [book?.title]);
   const zoomPercent = Math.round(zoomScale * 100);
