@@ -155,6 +155,7 @@ export function VerticalViewer() {
   return (
     <div
       ref={parentRef}
+      data-active-scroll="true"
       className="h-full overflow-auto px-2 pb-16 pt-3 md:px-4"
       onScroll={applyCurrentPageFromViewport}
     >

@@ -57,12 +57,19 @@ function ViewerArea() {
       } else if (event.key === "-" || event.key === "_") {
         event.preventDefault();
         changeZoomBy(-0.1);
-      } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-        event.preventDefault();
-        goToPage(currentPage + 1);
-      } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      } else if (event.key === "ArrowRight") {
         event.preventDefault();
         goToPage(currentPage - 1);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        goToPage(currentPage + 1);
+      } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const activeScroll = document.querySelector<HTMLElement>('[data-active-scroll="true"]');
+        if (activeScroll) {
+          const delta = event.key === "ArrowDown" ? 120 : -120;
+          activeScroll.scrollBy({ top: delta, behavior: "auto" });
+        }
       }
     };
 

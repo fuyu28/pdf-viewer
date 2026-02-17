@@ -15,6 +15,7 @@ export function HorizontalViewer() {
   const [pageRatios, setPageRatios] = useState<Record<number, number>>({});
 
   const { numPages, getPageSize } = usePdf();
+  const totalPages = Math.max(1, numPages);
   const currentPage = useViewerStore((state) => state.currentPage);
   const zoomScale = useViewerStore((state) => state.zoomScale);
   const setCurrentPage = useViewerStore((state) => state.setCurrentPage);
@@ -125,19 +126,22 @@ export function HorizontalViewer() {
     emblaApi.scrollTo(currentPage - 1, true);
     // 初期同期のみ必要
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emblaApi]);
+  }, [emblaApi, currentPage]);
 
   return (
     <div ref={parentRef} className="h-full overflow-hidden px-2 pb-16 pt-3 md:px-4">
       <div ref={emblaRef} className="h-full overflow-hidden">
         <div className="flex h-full">
-          {Array.from({ length: Math.max(1, numPages) }, (_, index) => {
+          {Array.from({ length: totalPages }, (_, index) => {
             const pageNumber = index + 1;
             const isNear = Math.abs(pageNumber - currentPage) <= 2;
             const ratio = pageRatios[pageNumber] ?? DEFAULT_PAGE_RATIO;
             return (
               <div key={pageNumber} className="h-full min-w-0 flex-[0_0_100%]">
-                <div className="mx-auto h-full max-w-5xl overflow-auto pb-4">
+                <div
+                  data-active-scroll={pageNumber === currentPage ? "true" : "false"}
+                  className="mx-auto h-full max-w-5xl overflow-auto pb-4"
+                >
                   {isNear ? (
                     <PageCanvas
                       pageNumber={pageNumber}
