@@ -11,12 +11,14 @@ type ViewerState = {
   currentPage: number;
   numPages: number;
   zoomScale: number;
+  isSpreadMode: boolean;
   goToPageImpl: GoToPageImpl | null;
   setNumPages: (numPages: number) => void;
   setMode: (mode: ViewerMode) => void;
   setCurrentPage: (page: number) => void;
   setZoomScale: (scale: number) => void;
   changeZoomBy: (delta: number) => void;
+  setSpreadMode: (isSpread: boolean) => void;
   goToPage: (page: number) => void;
   setGoToPageImpl: (impl: GoToPageImpl | null) => void;
 };
@@ -26,6 +28,7 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
   currentPage: 1,
   numPages: 1,
   zoomScale: 1,
+  isSpreadMode: false,
   goToPageImpl: null,
   setNumPages: (numPages) => {
     const safeNumPages = Math.max(1, numPages);
@@ -47,6 +50,7 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
     const next = Math.round((zoomScale + delta) * 100) / 100;
     set({ zoomScale: clamp(next, 0.5, 3) });
   },
+  setSpreadMode: (isSpreadMode) => set({ isSpreadMode }),
   goToPage: (page) => {
     const { numPages, goToPageImpl } = get();
     const clamped = clamp(page, 1, Math.max(1, numPages));

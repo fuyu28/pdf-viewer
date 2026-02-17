@@ -21,9 +21,11 @@ function ViewerArea() {
   const mode = useViewerStore((state) => state.mode);
   const currentPage = useViewerStore((state) => state.currentPage);
   const zoomScale = useViewerStore((state) => state.zoomScale);
+  const isSpreadMode = useViewerStore((state) => state.isSpreadMode);
   const setMode = useViewerStore((state) => state.setMode);
   const setZoomScale = useViewerStore((state) => state.setZoomScale);
   const changeZoomBy = useViewerStore((state) => state.changeZoomBy);
+  const setSpreadMode = useViewerStore((state) => state.setSpreadMode);
   const goToPage = useViewerStore((state) => state.goToPage);
 
   const { numPages, isLoading, error } = usePdf();
@@ -59,10 +61,12 @@ function ViewerArea() {
         changeZoomBy(-0.1);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        goToPage(currentPage - 1);
+        const step = mode === "horizontal" && isSpreadMode ? 2 : 1;
+        goToPage(currentPage - step);
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
-        goToPage(currentPage + 1);
+        const step = mode === "horizontal" && isSpreadMode ? 2 : 1;
+        goToPage(currentPage + step);
       } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
         const activeScroll = document.querySelector<HTMLElement>('[data-active-scroll="true"]');
@@ -75,7 +79,7 @@ function ViewerArea() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [changeZoomBy, currentPage, goToPage]);
+  }, [changeZoomBy, currentPage, goToPage, isSpreadMode, mode]);
 
   const title = useMemo(() => book?.title ?? "PDF Viewer", [book?.title]);
   const zoomPercent = Math.round(zoomScale * 100);
@@ -109,6 +113,13 @@ function ViewerArea() {
               {currentPage} / {Math.max(1, numPages)}
             </Badge>
             <div className="hidden items-center gap-1 md:flex">
+              <Button
+                variant={isSpreadMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSpreadMode(!isSpreadMode)}
+              >
+                見開き
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
