@@ -15,7 +15,7 @@ export function HorizontalViewer() {
   const [containerHeight, setContainerHeight] = useState(0);
   const [pageRatios, setPageRatios] = useState<Record<number, number>>({});
 
-  const { numPages, getPageSize } = usePdf();
+  const { numPages, getPage, getPageSize } = usePdf();
   const totalPages = Math.max(1, numPages);
   const currentPage = useViewerStore((state) => state.currentPage);
   const zoomScale = useViewerStore((state) => state.zoomScale);
@@ -158,6 +158,19 @@ export function HorizontalViewer() {
       active = false;
     };
   }, [currentPage, getPageSize, isSpreadMode, numPages, pageRatios]);
+
+  useEffect(() => {
+    const targets = isSpreadMode
+      ? [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2]
+      : [currentPage - 1, currentPage, currentPage + 1];
+
+    for (const page of targets) {
+      if (page < 1 || page > totalPages) {
+        continue;
+      }
+      void getPage(page).catch(() => undefined);
+    }
+  }, [currentPage, getPage, isSpreadMode, totalPages]);
 
   useEffect(() => {
     if (!emblaApi) {

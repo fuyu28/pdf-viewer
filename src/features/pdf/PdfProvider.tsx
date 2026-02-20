@@ -16,7 +16,7 @@ import {
 } from "pdfjs-dist";
 
 import { useViewerStore } from "../viewer/viewerStore";
-import { loadPdfBytesWithCache } from "./pdfCache";
+import { cachePdfInBackground, getCachedPdfBytes } from "./pdfCache";
 
 type PdfContextValue = {
   doc: PDFDocumentProxy | null;
@@ -47,6 +47,7 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
   useEffect(() => {
     let isMounted = true;
     let loadingTask: PDFDocumentLoadingTask | null = null;
+    let cacheWarmupTimer: ReturnType<typeof setTimeout> | null = null;
 
     setIsLoading(true);
     setError(null);
@@ -55,12 +56,19 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
 
     void (async () => {
       try {
-        const bytes = await loadPdfBytesWithCache(url);
+        const cachedBytes = await getCachedPdfBytes(url);
         if (!isMounted) {
           return;
         }
 
-        loadingTask = getDocument({ data: bytes });
+        loadingTask = cachedBytes
+          ? getDocument({ data: cachedBytes })
+          : getDocument({
+              url,
+              disableRange: false,
+              disableStream: false,
+              disableAutoFetch: false,
+            });
         const loadedDoc = await loadingTask.promise;
         if (!isMounted) {
           void loadedDoc.destroy();
@@ -69,6 +77,11 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
 
         setDoc(loadedDoc);
         setNumPages(loadedDoc.numPages);
+        if (!cachedBytes) {
+          cacheWarmupTimer = setTimeout(() => {
+            void cachePdfInBackground(url);
+          }, 1500);
+        }
       } catch (loadError: unknown) {
         if (!isMounted) {
           return;
@@ -88,6 +101,9 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
 
     return () => {
       isMounted = false;
+      if (cacheWarmupTimer) {
+        clearTimeout(cacheWarmupTimer);
+      }
       loadingTask?.destroy();
       setDoc((current) => {
         if (current) {

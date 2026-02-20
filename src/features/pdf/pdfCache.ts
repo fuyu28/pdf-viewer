@@ -79,6 +79,38 @@ async function getCachedPdfRecord(url: string) {
   return record ?? null;
 }
 
+async function deleteCachedPdfRecord(url: string) {
+  const db = await openDatabase();
+  if (!db) {
+    return;
+  }
+
+  const transaction = db.transaction(STORE_NAME, "readwrite");
+  transaction.objectStore(STORE_NAME).delete(url);
+  await transactionDone(transaction);
+}
+
+function looksLikePdf(buffer: ArrayBuffer) {
+  if (buffer.byteLength < 8) {
+    return false;
+  }
+
+  const bytes = new Uint8Array(buffer);
+  const probeLength = Math.min(bytes.length, 1024);
+  for (let i = 0; i <= probeLength - 5; i += 1) {
+    if (
+      bytes[i] === 0x25 && // %
+      bytes[i + 1] === 0x50 && // P
+      bytes[i + 2] === 0x44 && // D
+      bytes[i + 3] === 0x46 && // F
+      bytes[i + 4] === 0x2d // -
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 async function upsertCachedPdfRecord(
   url: string,
   data: ArrayBuffer,
@@ -192,38 +224,52 @@ async function revalidateCachedPdfInBackground(url: string, cached: CachedPdfRec
   }
 }
 
-async function fetchPdfWithoutCache(url: string) {
-  const response = await fetch(url, { cache: "no-cache" });
+async function cachePdfFromResponse(url: string, response: Response) {
   if (!response.ok) {
-    throw new Error(`${url} の読み込みに失敗しました (${response.status})`);
+    return;
   }
-  return new Uint8Array(await response.arrayBuffer());
+  const data = await response.arrayBuffer();
+  if (!looksLikePdf(data)) {
+    return;
+  }
+  await upsertCachedPdfRecord(url, data, response.headers.get("etag"), Date.now());
+  await trimCacheIfNeeded();
 }
 
-export async function loadPdfBytesWithCache(url: string) {
-  const canUseCache = hasIndexedDb();
-  if (!canUseCache) {
-    return fetchPdfWithoutCache(url);
+export async function getCachedPdfBytes(url: string) {
+  if (!hasIndexedDb()) {
+    return null;
   }
 
   const cached = await getCachedPdfRecord(url);
-  if (cached) {
-    void revalidateCachedPdfInBackground(url, cached);
-    return new Uint8Array(cached.data.slice(0));
+  if (!cached) {
+    return null;
+  }
+  if (!looksLikePdf(cached.data)) {
+    await deleteCachedPdfRecord(url);
+    return null;
   }
 
-  const response = await fetchPdf(url, null);
+  void revalidateCachedPdfInBackground(url, cached);
+  return new Uint8Array(cached.data.slice(0));
+}
 
-  if (response.status === 304) {
-    throw new Error(`${url} が304を返しましたがキャッシュが見つかりません`);
+export async function cachePdfInBackground(url: string) {
+  if (!hasIndexedDb()) {
+    return;
   }
 
-  if (!response.ok) {
-    throw new Error(`${url} の読み込みに失敗しました (${response.status})`);
+  try {
+    const cached = await getCachedPdfRecord(url);
+    const response = await fetchPdf(url, cached?.etag ?? null);
+    if (response.status === 304) {
+      if (cached) {
+        await touchCachedPdfRecord(cached);
+      }
+      return;
+    }
+    await cachePdfFromResponse(url, response);
+  } catch {
+    // Ignore background cache failures.
   }
-
-  const data = await response.arrayBuffer();
-  await upsertCachedPdfRecord(url, data, response.headers.get("etag"), Date.now());
-  await trimCacheIfNeeded();
-  return new Uint8Array(data);
 }

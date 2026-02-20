@@ -13,7 +13,7 @@ import { useViewerStore } from "../features/viewer/viewerStore";
 import { VerticalViewer } from "../features/viewer/VerticalViewer";
 import { useMediaQuery } from "../shared/hooks/useMediaQuery";
 
-const PDF_URL = "/pdf/3000000149.pdf";
+const PDF_URL = "/pdf/linearize.pdf";
 const BOOK_JSON_URL = PDF_URL.replace(/\.pdf$/i, ".json");
 const ZOOM_OPTIONS = [50, 67, 80, 100, 125, 150, 175, 200, 250, 300];
 
