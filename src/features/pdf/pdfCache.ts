@@ -172,6 +172,26 @@ async function fetchPdf(url: string, etag: string | null) {
   });
 }
 
+async function revalidateCachedPdfInBackground(url: string, cached: CachedPdfRecord) {
+  try {
+    const response = await fetchPdf(url, cached.etag);
+    if (response.status === 304) {
+      await touchCachedPdfRecord(cached);
+      return;
+    }
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.arrayBuffer();
+    await upsertCachedPdfRecord(url, data, response.headers.get("etag"), Date.now());
+    await trimCacheIfNeeded();
+  } catch {
+    // Keep stale cache when revalidation fails.
+  }
+}
+
 async function fetchPdfWithoutCache(url: string) {
   const response = await fetch(url, { cache: "no-cache" });
   if (!response.ok) {
@@ -187,31 +207,23 @@ export async function loadPdfBytesWithCache(url: string) {
   }
 
   const cached = await getCachedPdfRecord(url);
-  try {
-    const response = await fetchPdf(url, cached?.etag ?? null);
-
-    if (response.status === 304) {
-      if (!cached) {
-        throw new Error(`${url} が304を返しましたがキャッシュが見つかりません`);
-      }
-
-      await touchCachedPdfRecord(cached);
-      return new Uint8Array(cached.data.slice(0));
-    }
-
-    if (!response.ok) {
-      throw new Error(`${url} の読み込みに失敗しました (${response.status})`);
-    }
-
-    const data = await response.arrayBuffer();
-    await upsertCachedPdfRecord(url, data, response.headers.get("etag"), Date.now());
-    await trimCacheIfNeeded();
-    return new Uint8Array(data);
-  } catch (error) {
-    if (cached) {
-      await touchCachedPdfRecord(cached);
-      return new Uint8Array(cached.data.slice(0));
-    }
-    throw error;
+  if (cached) {
+    void revalidateCachedPdfInBackground(url, cached);
+    return new Uint8Array(cached.data.slice(0));
   }
+
+  const response = await fetchPdf(url, null);
+
+  if (response.status === 304) {
+    throw new Error(`${url} が304を返しましたがキャッシュが見つかりません`);
+  }
+
+  if (!response.ok) {
+    throw new Error(`${url} の読み込みに失敗しました (${response.status})`);
+  }
+
+  const data = await response.arrayBuffer();
+  await upsertCachedPdfRecord(url, data, response.headers.get("etag"), Date.now());
+  await trimCacheIfNeeded();
+  return new Uint8Array(data);
 }
