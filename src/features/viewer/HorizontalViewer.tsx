@@ -57,6 +57,7 @@ export function HorizontalViewer() {
     align: "start",
     dragFree: false,
     skipSnaps: false,
+    direction: "rtl",
   });
 
   useEffect(() => {
@@ -170,7 +171,7 @@ export function HorizontalViewer() {
   return (
     <div ref={parentRef} className="h-full overflow-hidden px-2 pb-16 pt-3 md:px-4">
       <div ref={emblaRef} className="h-full overflow-hidden">
-        <div className="flex h-full">
+        <div className="flex h-full flex-row-reverse">
           {Array.from({ length: totalSlides }, (_, slideIndex) => {
             const firstPage = slideToFirstPage(slideIndex);
             const secondPage = firstPage + 1 <= totalPages ? firstPage + 1 : null;

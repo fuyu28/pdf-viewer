@@ -202,8 +202,15 @@ export function VerticalViewer() {
   }, [pageToRowIndex, rowVirtualizer, setGoToPageImpl]);
 
   useEffect(() => {
+    const targetRowIndex = pageToRowIndex(currentPage);
+    const visibleRows = rowVirtualizer.getVirtualItems();
+    const isTargetVisible = visibleRows.some((row) => row.index === targetRowIndex);
+    if (isTargetVisible) {
+      return;
+    }
+
     suppressObserverUntilRef.current = Date.now() + 350;
-    rowVirtualizer.scrollToIndex(pageToRowIndex(currentPage), {
+    rowVirtualizer.scrollToIndex(targetRowIndex, {
       align: "start",
       behavior: "auto",
     });
