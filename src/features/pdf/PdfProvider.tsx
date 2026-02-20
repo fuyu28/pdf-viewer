@@ -8,9 +8,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getDocument, type PDFDocumentProxy, type PDFPageProxy } from "pdfjs-dist";
+import {
+  getDocument,
+  type PDFDocumentLoadingTask,
+  type PDFDocumentProxy,
+  type PDFPageProxy,
+} from "pdfjs-dist";
 
 import { useViewerStore } from "../viewer/viewerStore";
+import { loadPdfBytesWithCache } from "./pdfCache";
 
 type PdfContextValue = {
   doc: PDFDocumentProxy | null;
@@ -40,15 +46,22 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
 
   useEffect(() => {
     let isMounted = true;
-    const loadingTask = getDocument(url);
+    let loadingTask: PDFDocumentLoadingTask | null = null;
 
     setIsLoading(true);
     setError(null);
     pageCacheRef.current.clear();
     pageSizeCacheRef.current.clear();
 
-    loadingTask.promise
-      .then((loadedDoc) => {
+    void (async () => {
+      try {
+        const bytes = await loadPdfBytesWithCache(url);
+        if (!isMounted) {
+          return;
+        }
+
+        loadingTask = getDocument({ data: bytes });
+        const loadedDoc = await loadingTask.promise;
         if (!isMounted) {
           void loadedDoc.destroy();
           return;
@@ -56,8 +69,7 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
 
         setDoc(loadedDoc);
         setNumPages(loadedDoc.numPages);
-      })
-      .catch((loadError: unknown) => {
+      } catch (loadError: unknown) {
         if (!isMounted) {
           return;
         }
@@ -67,16 +79,16 @@ export function PdfProvider({ url, children }: PdfProviderProps) {
         setError(message);
         setDoc(null);
         setNumPages(1);
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) {
           setIsLoading(false);
         }
-      });
+      }
+    })();
 
     return () => {
       isMounted = false;
-      loadingTask.destroy();
+      loadingTask?.destroy();
       setDoc((current) => {
         if (current) {
           void current.destroy();
